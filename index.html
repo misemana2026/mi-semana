@@ -1,2 +1,118 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#17172b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="MI SEMANA"><link rel="manifest" href="manifest.webmanifest"><title>MI SEMANA</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#10101c;color:#fff;margin:0;padding:22px}main{max-width:650px;margin:auto}h1{letter-spacing:2px}p,small{color:#bdbdd0}.panel{background:#202035;border-radius:18px;padding:18px;margin:16px 0}input,select,button{font:inherit;border:0;border-radius:10px;padding:12px;box-sizing:border-box}input,select{background:#34344c;color:white;width:100%;margin:5px 0 10px}button{background:#a68cff;color:#10101c;font-weight:700;cursor:pointer}li{background:#292940;margin:8px 0;padding:12px;border-radius:10px;list-style:none}ul{padding:0}.done{text-decoration:line-through;opacity:.55}.actions{display:flex;gap:8px;justify-content:flex-end}.actions button{padding:7px 10px;font-size:13px}.secondary{background:#45455d;color:white}label{font-size:13px;color:#c8c8dc}</style></head><body><main><h1>MI SEMANA ✨</h1><p>Organiza tus días. Cumple tus metas.</p><section class="panel"><h2>Nuevo pendiente o cita</h2><form id="form"><label>¿Qué tienes que hacer?</label><input id="name" maxlength="100" placeholder="Ej. Cita con el dentista" required><label>Fecha y hora</label><input id="when" type="datetime-local" required><button type="submit">+ Guardar actividad</button></form></section><section class="panel"><h2>Mis actividades</h2><ul id="tasks"></ul><p id="empty">Todavía no tienes actividades.</p></section><section class="panel"><h2>Recordatorios</h2><p>Activa avisos mientras la aplicación esté abierta. Para recibir notificaciones aunque esté cerrada, hará falta configurar un servicio de notificaciones push.</p><button id="notify" class="secondary">Activar notificaciones</button><p><small>Los pendientes se guardan en este dispositivo. No se sincronizan entre equipos; borrar los datos del navegador puede eliminarlos.</small></p></section></main><script>const key='mi-semana-tareas-v1';let tasks=[];try{tasks=JSON.parse(localStorage.getItem(key)||'[]')}catch{};const el=id=>document.getElementById(id);function save(){localStorage.setItem(key,JSON.stringify(tasks));render()}function render(){el('tasks').replaceChildren();el('empty').hidden=tasks.length>0;tasks.sort((a,b)=>a.when.localeCompare(b.when));for(const t of tasks){const li=document.createElement('li');if(t.done)li.className='done';const info=document.createElement('div');const strong=document.createElement('strong');strong.textContent=t.name;const date=document.createElement('div');date.textContent=new Date(t.when).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});info.append(strong,date);const actions=document.createElement('div');actions.className='actions';const toggle=document.createElement('button');toggle.className='secondary';toggle.textContent=t.done?'Reabrir':'Hecho';toggle.onclick=()=>{t.done=!t.done;save()};const del=document.createElement('button');del.className='secondary';del.textContent='Eliminar';del.onclick=()=>{tasks=tasks.filter(x=>x.id!==t.id);save()};actions.append(toggle,del);li.append(info,actions);el('tasks').append(li)}}el('form').onsubmit=e=>{e.preventDefault();tasks.push({id:crypto.randomUUID(),name:el('name').value.trim(),when:el('when').value,done:false,alerted:false});save();el('form').reset()};el('notify').onclick=async()=>{if(!('Notification'in window)){alert('Este navegador no permite notificaciones aquí. En iPhone instala primero la app en la pantalla de inicio.');return}const p=await Notification.requestPermission();alert(p==='granted'?'Avisos permitidos mientras la app esté abierta.':'No se concedió permiso para avisos.')};setInterval(()=>{if(!('Notification'in window)||Notification.permission!=='granted')return;const now=Date.now();let changed=false;for(const t of tasks){if(!t.done&&!t.alerted&&new Date(t.when).getTime()<=now&&new Date(t.when).getTime()>now-60000){new Notification('MI SEMANA',{body:t.name});t.alerted=true;changed=true}}if(changed)save()},15000);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});render();</script></body></html>
-<!-- Actualización de MI SEMANA -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#17172b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MI SEMANA">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>MI SEMANA</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#10101c;color:#fff;margin:0;padding:22px}
+    main{max-width:650px;margin:auto}h1{letter-spacing:2px}p,small{color:#bdbdd0}
+    .panel{background:#202035;border-radius:18px;padding:18px;margin:16px 0}
+    input,select,button{font:inherit;border:0;border-radius:10px;padding:12px;box-sizing:border-box}
+    input,select{background:#34344c;color:white;width:100%;margin:5px 0 10px}
+    button{background:#a68cff;color:#10101c;font-weight:700;cursor:pointer}
+    li{background:#292940;margin:8px 0;padding:12px;border-radius:10px;list-style:none}
+    ul{padding:0}.done{text-decoration:line-through;opacity:.55}
+    .actions{display:flex;gap:8px;justify-content:flex-end}
+    .actions button{padding:7px 10px;font-size:13px}
+    .secondary{background:#45455d;color:white}label{font-size:13px;color:#c8c8dc}
+  </style>
+</head>
+<body>
+<main>
+  <h1>MI SEMANA ✨</h1>
+  <p>Organiza tus días. Cumple tus metas.</p>
+  <section class="panel">
+    <h2>Nuevo pendiente o cita</h2>
+    <form id="form">
+      <label for="name">¿Qué tienes que hacer?</label>
+      <input id="name" maxlength="100" placeholder="Ej. Cita con el dentista" required>
+      <label for="when">Fecha y hora</label>
+      <input id="when" type="datetime-local" required>
+      <button type="submit">+ Guardar actividad</button>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Mis actividades</h2>
+    <ul id="tasks"></ul>
+    <p id="empty">Todavía no tienes actividades.</p>
+  </section>
+  <section class="panel">
+    <h2>Recordatorios</h2>
+    <p>Activa avisos mientras la aplicación esté abierta. Para recibir notificaciones aunque esté cerrada, hará falta configurar un servicio de notificaciones push.</p>
+    <button id="notify" class="secondary">Activar notificaciones</button>
+    <p><small>Los pendientes se guardan en este dispositivo. No se sincronizan entre equipos; borrar los datos del navegador puede eliminarlos.</small></p>
+  </section>
+</main>
+<script>
+  const key='mi-semana-tareas-v1';
+  let tasks=[];
+  try{tasks=JSON.parse(localStorage.getItem(key)||'[]')}catch{}
+  const el=id=>document.getElementById(id);
+  function save(){localStorage.setItem(key,JSON.stringify(tasks));render()}
+  function render(){
+    el('tasks').replaceChildren();
+    el('empty').hidden=tasks.length>0;
+    tasks.sort((a,b)=>a.when.localeCompare(b.when));
+    for(const t of tasks){
+      const li=document.createElement('li');
+      if(t.done)li.className='done';
+      const info=document.createElement('div');
+      const strong=document.createElement('strong');strong.textContent=t.name;
+      const date=document.createElement('div');
+      date.textContent=new Date(t.when).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'});
+      info.append(strong,date);
+      const actions=document.createElement('div');actions.className='actions';
+      const toggle=document.createElement('button');toggle.className='secondary';
+      toggle.textContent=t.done?'Reabrir':'Hecho';
+      toggle.onclick=()=>{t.done=!t.done;save()};
+      const del=document.createElement('button');del.className='secondary';del.textContent='Eliminar';
+      del.onclick=()=>{tasks=tasks.filter(x=>x.id!==t.id);save()};
+      actions.append(toggle,del);li.append(info,actions);el('tasks').append(li);
+    }
+  }
+  el('form').onsubmit=e=>{
+    e.preventDefault();
+    tasks.push({id:crypto.randomUUID(),name:el('name').value.trim(),when:el('when').value,done:false,alerted:false});
+    save();el('form').reset();
+  };
+  el('notify').onclick=async()=>{
+    if(!('Notification'in window)){
+      alert('Este navegador no permite notificaciones aquí. En iPhone instala primero la app en la pantalla de inicio.');return;
+    }
+    const p=await Notification.requestPermission();
+    alert(p==='granted'?'Avisos permitidos mientras la app esté abierta.':'No se concedió permiso para avisos.');
+  };
+  setInterval(()=>{
+    if(!('Notification'in window)||Notification.permission!=='granted')return;
+    const now=Date.now();let changed=false;
+    for(const t of tasks){
+      if(!t.done&&!t.alerted&&new Date(t.when).getTime()<=now&&new Date(t.when).getTime()>now-60000){
+        new Notification('MI SEMANA',{body:t.name});
+        t.alerted=true;changed=true;
+      }
+    }
+    if(changed)save();
+  },15000);
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  render();
+</script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js';
+  const firebaseConfig = {
+    apiKey: 'AIzaSyBKDfZtqSY3ntmYHm0fsR1KWovcxDFkjo0',
+    authDomain: 'mi-semana-1a553.firebaseapp.com',
+    projectId: 'mi-semana-1a553',
+    storageBucket: 'mi-semana-1a553.firebasestorage.app',
+    messagingSenderId: '681758325227',
+    appId: '1:681758325227:web:f0086bfe9baf30551e81ae'
+  };
+  initializeApp(firebaseConfig);
+  console.log('Firebase inicializado para MI SEMANA');
+</script>
+</body>
+</html>
